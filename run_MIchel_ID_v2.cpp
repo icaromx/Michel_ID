@@ -413,7 +413,7 @@ int main(int argc, char **argv){
 	        			}
 	        		}
 	        		j += 1;
-	        		if(j >= pl_size) ongoing_cone_test = false;
+	        		if(j >= pl_size) break;
 	        	}
 
 	        	//while(cone_test_fail && ){
