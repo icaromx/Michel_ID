@@ -25,9 +25,9 @@
 
 #define PI 3.14159
 
-//#include "/grid/fermiapp/products/larsoft/eigen/v3_3_3/include/eigen3/Eigen/Dense"
+#include "/grid/fermiapp/products/larsoft/eigen/v3_3_3/include/eigen3/Eigen/Dense"
 
-#include "/usr/local/Cellar/eigen/3.3.4/include/eigen3/Eigen/Dense" //Needed on MACOS
+//#include "/usr/local/Cellar/eigen/3.3.4/include/eigen3/Eigen/Dense" //Needed on MACOS
 using namespace std;
 
 struct Point {
@@ -356,7 +356,7 @@ int main(int argc, char **argv){
     					xVal += 0.5*ang_results.eVecs[0](0);
     					yVal += 0.5*ang_results.eVecs[0](1);
     					zVal += 0.5*ang_results.eVecs[0](2);
-    					cout << xVal << endl;
+    					
     					if(pca_counter == 0){
     						pca_start_x = xVal;
     						pca_start_y = xVal;
@@ -364,6 +364,7 @@ int main(int argc, char **argv){
     					}
     					pca_counter += 1;
   					}
+  					cout << pca_counter << endl;
   					pca_end_x = xVal;
   					pca_end_y = yVal;
   					pca_end_z = zVal;
