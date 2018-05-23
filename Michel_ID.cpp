@@ -148,17 +148,16 @@ int main(int argc, char **argv){
 	double t_dQdx, t_dEdx;
 
 	///////////////////
-	//Define root output file
+	//DEFINE ROOT OUTPUT FILE
 	TFile *f_output;
-	if(track_num == -1){ // 
+	if(track_num == -1){ // argv[2] 
 			f_output = TFile::Open(Form("results_%sX%s.root",argv[3],argv[3]),"RECREATE");
 			//f_output = TFile::Open("TEST.root","RECREATE");
 	}else{
 			f_output = TFile::Open(Form("results_%s_weight.root",argv[2]),"RECREATE");
 	}
-	
+	//Start root objects 
 	TNtuple *nt_results = new TNtuple("nt_results","nt_results","C_ord:alpha:M_ord:Cone_Cosphi:max_phi:ord_pca_pts:sel:M_sel:min_Costheta:max_theta:purity:efficiency:ver_rms:ver_mean");
-	
 	TNtuple *nt_clus_trk = 	new TNtuple("nt_clus_trk","nt_clus_trk","run_num:ev_num:cluster_id:x:y:z:q:px:py:pz:ord:closeness:vertex:sp_vertex:true_vertex:is_ordered:is_michel");
 	TH1F *h_vertex = new TH1F("h_vertex","h_vertex",40,0,40);
 	TH1F *h_sp_vertex = new TH1F("h_sp_vertex","h_sp_vertex",40,0,40);
@@ -193,9 +192,6 @@ int main(int argc, char **argv){
 		double mvrX = std::stod(TrackData[i].substr(third_comma+1,TrackData[i].size()));
 		double mvrY = std::stod(TrackData[i].substr(fourth_comma+1,TrackData[i].size()));
 		double mvrZ = std::stod(TrackData[i].substr(fifth_comma+1,TrackData[i].size()));
-		//if(mvrX == -1.0 && mvrY == -1.0 && mvrZ == -1.0){
-		//	continue;
-		//}
 		v_michel.push_back(mrun);
 		v_michel.push_back(meve);
 		v_michel.push_back(mtrk);
@@ -209,7 +205,7 @@ int main(int argc, char **argv){
 	
 	///////////////////
 	// COUNTERS
-	///////////////////
+
 	int small_tracks = 0;
 	int total_num_tracks = 0;
 	int tracks_survived_ord_alg = 0;
@@ -225,14 +221,14 @@ int main(int argc, char **argv){
 		 	
 	///////////////////
 	// STUDY OUTPUTS
-	///////////////////
+
 	double purity = 0, efficiency = 0, ver_rms = 0., ver_mean = 0., ver_sd = 0.;
 	double sp_ver_rms = 0., sp_ver_mean = 0., sp_ver_sd = 0.;
 	std::vector<double> v_vertex_res, v_sp_vertex_res;
 
 	///////////////////
 	// START OF FILELIST READ-IN LOOP
-	///////////////////
+
 	std::string line;
 	std::ifstream ifs(argv[1]);	
 	while(std::getline(ifs, line)){
@@ -243,9 +239,9 @@ int main(int argc, char **argv){
 		TString filename;
 		filename.Form("%s",line.c_str());	
 		TFile *infile = new TFile(filename);
+
 		////////////////////////////////////////////////////////////////////////////
-		//Extract Event Metadata
-		////////////////////
+		// EXTRACT EVENT METADATA
 		TTree *Trun = (TTree*)infile->Get("Trun");
 		Int_t run_num, ev_num;
 		Trun->SetBranchAddress("runNo",&run_num);
@@ -253,8 +249,7 @@ int main(int argc, char **argv){
 		Trun->GetEntry(0);
 
 		////////////////////////////////////////////////////////////////////////////
-		//Extract Coordinate information
-		///////////////////
+		// EXTRACT POINT INFORMATION (X,Y,Z,Q)
 		TTree *T_charge_cluster = (TTree*)infile->Get("T_charge_cluster_nfc"); 
 		Double_t cluster_id;
 		Double_t qx;
@@ -276,8 +271,7 @@ int main(int argc, char **argv){
 
 
 		////////////////////////////////////////////////////////////////////////////
-		//Extract Clusters from event
-		////////////////////
+		//EXTRACT CLUSTERS FROM EVENT
 		std::vector<Int_t> clusters;
 		Int_t prev_cval;
 		for (int i = 0; i < all_entries; ++i){
@@ -294,20 +288,16 @@ int main(int argc, char **argv){
 		////////////////////////////////////////////////////////////////////////////
 
 		////////////////////////////////////////////////////////////////////////////
-		//Loop through Wire-Cell (WC) clusters in Event
-		////////////////////
+		//LOOP THROUGH WIRE-CELL (WC) CLUSTERS IN EVENT
 		for (int c = 0; c < num_clusters; ++c){
 			int cluster = clusters[c]; // Obtain cluster number 
 			total_num_tracks += 1; // cluster counter
 			cout << "Looking at Run: " << run_num << ", Event: " << ev_num << ", Cluster: " << cluster << endl;
-
 			//BOOLEAN PARAMETERS
 			bool is_michel = false, is_selected = false, is_ordered = false, is_sp_selected = false;	
-
 			// obtain cluster ID for single cluster study. This is compared to argv[2]
 			string clus_id = to_string(ev_num) + to_string(cluster);
 			int int_clus_id= stoi(clus_id);
-
 			//Determine if cluster is a Michel from hand scan .csv db
 			for (int cand = 0; cand < mcand_size; ++cand){
 				if(Michel_candidates[cand][0] == run_num && Michel_candidates[cand][1] == ev_num && Michel_candidates[cand][2] == cluster){
@@ -319,7 +309,7 @@ int main(int argc, char **argv){
 					
 			
 			////////////////////////////////////////////////////////////////
-			// LOAD CLUSTER INFORMATION (x,y,z,q)
+			// LOAD WC CLUSTER INFORMATION (x,y,z,q)
 			track_def trk; // start struct
 			//Load every point (cluster id, x, y, z, charge) of a cluster into the trk object.
 			for (int i = 0; i < all_entries; ++i){
@@ -337,17 +327,17 @@ int main(int argc, char **argv){
 				trk.push_back(tempPoint);
 			}
 			////////////////////////////////////////////////////////////////
-
+			// SMALL WC CLUSTER CUT
 			if(trk.size() < min_points_trk + 1){//CUT: Track size has to be larger than the moving window size
 				small_tracks += 1;
 				continue; // #CUT
 			}
 
-			Cluster Cl; // Object that will hold clustered and reclustered points
+			
 
-			//////////////////////////////////////////////////
-			////////CLUSTERING ALGORITHM BEGINS///////////////
-			//////////////////////////////////////////////////
+			/////////////////////////////////////////////////////////////////////
+			//////////////////CLUSTERING ALGORITHM BEGINS////////////////////////
+			/////////////////////////////////////////////////////////////////////
 
 			//Sort track in descending y value
 			std::sort(trk.begin(), trk.end(), by_y());
@@ -600,17 +590,17 @@ int main(int argc, char **argv){
 				if(is_michel) michels_survived_ord_alg += 1;
 			}
 			if(is_ordered) tracks_survived_ord_alg += 1;
-			// Finished Clustering Points
+			// FINISHED CLUSTERING POINTS
 			/////////////////////////////////////////////////////////
 			
 
-			//////////////////////////
-			// MICHEL ID
-			//////////////////////////
+			/////////////////////////////////////////////////////////////////////
+			////////////////VERTEX FINDING ALGORITHM BEGINS//////////////////////
+			/////////////////////////////////////////////////////////////////////
+			
 			if(is_ordered){
 				//////////////////////////
-				//Starting Moving Window
-				//////////////////////////
+				//Starting Moving Windo
 
 				double dotProd, min_ang = -360.;
 				double ev_lowest = 100000;
@@ -696,7 +686,6 @@ int main(int argc, char **argv){
 				double dist_low_vert_y;
 				dist_low_vert_y = abs(VertexPoint.y - low_ord_y);
 				
-				//if(is_ordered != true) continue;
 				if(dist_low_vert_y > 15) continue; //Michel electron cutoff distance based on energy spectrum
 				//angle cuts
 				if(min_ang < min_costheta) continue; 
@@ -823,6 +812,8 @@ int main(int argc, char **argv){
 			}
 			////////////////////////////////////////////
 			// FILL Cl OBJECT WITH CLUSTERED DATA
+
+			Cluster Cl; // Object that will hold clustered and reclustered points
 
 			if(is_selected){
 				for(int i = 0 ; i < ord_trk.size() ; ++i){
